@@ -43,6 +43,14 @@ class Router(meterRegistry: MeterRegistry) : RouteBuilder() {
 
     override fun configure() {
         from(DIRECT_ROUTE)
+            .process { exchange ->
+                var keyword = exchange.getIn().getHeader("keywords")
+                if (keyword is String && keyword.contains("max:[0-9]+".toRegex())) {
+                    keyword = keyword.replace(
+                        Regex("(.*)(max:)([0-9]+ ?)$"), "$1?count=$3")
+                }
+                exchange.getIn().setHeader("keywords", keyword)
+            }
             .toD("twitter-search:\${header.keywords}")
             .wireTap(LOG_ROUTE)
             .wireTap(COUNT_ROUTE)
